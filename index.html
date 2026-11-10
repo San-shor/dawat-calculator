@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>দাওয়াত ক্যালকুলেটর | Spice & Code</title>
+<meta name="description" content="কতজন মেহমান? কী কী রান্না? এক ক্লিকে বাজারের লিস্ট আর আনুমানিক খরচ।">
+<meta property="og:title" content="দাওয়াত ক্যালকুলেটর">
+<meta property="og:description" content="মেহমানের সংখ্যা দিন, মেনু বাছুন: কত কেজি চাল, মাংস, তেল লাগবে আর খরচ কত, সব এক জায়গায়।">
+<style>
+  :root {
+    --green: #1f4d2b; --green2: #2d6a3e; --cream: #f6efe1; --paper: #fffaf0;
+    --tur: #f2c14e; --tur2: #d99a1c; --red: #d9534f; --brown: #6e4a26; --ink: #2a2118; --mute: #7a6a58; --line: #e6dac2;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Hind Siliguri", "Nirmala UI", "Noto Sans Bengali", sans-serif; background: var(--cream); color: var(--ink); line-height: 1.5; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 16px 60px; }
+  header { background: var(--green); color: var(--cream); padding: 28px 16px 34px; text-align: center; border-radius: 0 0 28px 28px; }
+  header .code { font: 14px Consolas, monospace; color: var(--tur); letter-spacing: .5px; }
+  header h1 { font-size: 34px; line-height: 1.25; margin: 6px 0 6px; }
+  header p { font-size: 17px; opacity: .9; }
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: 20px; padding: 20px; margin-top: 18px; box-shadow: 0 4px 14px rgba(110,74,38,.07); }
+  .card h2 { font-size: 21px; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; }
+  .step { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--tur); color: var(--green); font: 700 16px Consolas, monospace; flex: none; }
+  .hint { color: var(--mute); font-size: 14px; margin-bottom: 12px; }
+  .count { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-top: 1px dashed var(--line); }
+  .count:first-of-type { border-top: 0; }
+  .count label { font-size: 18px; font-weight: 600; }
+  .count small { display: block; font-weight: 400; color: var(--mute); font-size: 13px; }
+  .stepper { display: flex; align-items: center; gap: 8px; }
+  .stepper button { width: 44px; height: 44px; border-radius: 12px; border: 0; background: var(--green); color: #fff; font-size: 24px; cursor: pointer; }
+  .stepper input { width: 70px; height: 44px; text-align: center; font-size: 20px; font-weight: 700; border: 2px solid var(--line); border-radius: 12px; background: #fff; color: var(--ink); }
+  .menu { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .dish { position: relative; display: flex; gap: 10px; align-items: center; border: 2px solid var(--line); border-radius: 14px; padding: 12px; cursor: pointer; background: #fff; user-select: none; }
+  .dish input { position: absolute; opacity: 0; }
+  .dish .em { font-size: 26px; }
+  .dish b { display: block; font-size: 16px; line-height: 1.25; }
+  .dish small { color: var(--mute); font-size: 12px; }
+  .dish.on { border-color: var(--green); background: #eef5ec; }
+  .dish.on::after { content: "✓"; position: absolute; top: 6px; right: 10px; color: var(--green); font-weight: 700; }
+  .seg { display: flex; gap: 8px; flex-wrap: wrap; }
+  .seg button { flex: 1; min-width: 90px; padding: 10px; border-radius: 12px; border: 2px solid var(--line); background: #fff; font: inherit; font-size: 15px; cursor: pointer; color: var(--ink); }
+  .seg button.on { border-color: var(--green); background: var(--green); color: #fff; }
+  .result { background: var(--green); color: var(--cream); border: 0; }
+  .result h2 { color: var(--cream); }
+  .result .code { font: 13px Consolas, monospace; color: var(--tur); }
+  .total { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0 6px; }
+  .total div { background: rgba(255,255,255,.08); border-radius: 14px; padding: 12px; text-align: center; }
+  .total small { display: block; font-size: 13px; opacity: .8; }
+  .total b { font-size: 26px; color: var(--tur); }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 16px; }
+  th { text-align: left; font-size: 13px; color: var(--tur); font-weight: 600; padding: 6px 4px; border-bottom: 1px solid rgba(255,255,255,.2); }
+  td { padding: 9px 4px; border-bottom: 1px solid rgba(255,255,255,.1); vertical-align: middle; }
+  td.q { font-weight: 700; white-space: nowrap; }
+  td.c { text-align: right; white-space: nowrap; }
+  th.c { text-align: right; }
+  .note { font-size: 13px; opacity: .8; margin-top: 10px; }
+  .btns { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .btn { flex: 1; min-width: 140px; padding: 14px; border: 0; border-radius: 14px; font: inherit; font-size: 17px; font-weight: 700; cursor: pointer; }
+  .btn.y { background: var(--tur); color: var(--green); }
+  .btn.o { background: transparent; color: var(--cream); border: 2px solid rgba(255,255,255,.4); }
+  details { margin-top: 18px; }
+  summary { cursor: pointer; font-weight: 700; font-size: 18px; padding: 4px 0; }
+  .prices { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; align-items: center; margin-top: 12px; font-size: 15px; }
+  .prices input { width: 100px; padding: 8px; border: 2px solid var(--line); border-radius: 10px; font: inherit; text-align: right; background: #fff; color: var(--ink); }
+  .empty { text-align: center; padding: 20px 0; opacity: .85; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(100px); background: var(--ink); color: #fff; padding: 12px 22px; border-radius: 999px; transition: transform .25s; font-size: 15px; z-index: 9; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  footer { text-align: center; color: var(--mute); font-size: 14px; margin-top: 30px; }
+  footer a { color: var(--green); font-weight: 700; }
+  footer .code { font: 12px Consolas, monospace; display: block; margin-top: 4px; }
+  @media (max-width: 420px) {
+    header h1 { font-size: 28px; }
+    .menu { gap: 8px; }
+    .dish { padding: 10px 18px 10px 8px; gap: 6px; }
+    .dish .em { font-size: 20px; }
+    .dish b { font-size: 15px; }
+    .dish small { font-size: 11px; }
+    .dish.on::after { top: 2px; right: 5px; font-size: 13px; }
+  }
+  @media print { header, .card:not(.result), .btns, details, footer { display: none; } body { background: #fff; } .result { background: #fff; color: #000; } .result * { color: #000 !important; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="code">// spice &amp; code kitchen tools</div>
+  <h1>দাওয়াত ক্যালকুলেটর 🍛</h1>
+  <p>কতজন মেহমান? কী রান্না হবে?<br>বাজারের লিস্ট আর খরচ এক ক্লিকে।</p>
+</header>
+
+<div class="wrap">
+
+  <section class="card">
+    <h2><span class="step">1</span> কতজন মেহমান?</h2>
+    <p class="hint">বাসার সবাইকেও গুনে নিন</p>
+    <div class="count">
+      <label>বড়রা<small>১২ বছরের বেশি</small></label>
+      <div class="stepper"><button data-t="adults" data-d="-1">−</button><input id="adults" type="number" min="0" inputmode="numeric" value="20"><button data-t="adults" data-d="1">+</button></div>
+    </div>
+    <div class="count">
+      <label>বাচ্চারা<small>অর্ধেক খাবার ধরা হয়</small></label>
+      <div class="stepper"><button data-t="kids" data-d="-1">−</button><input id="kids" type="number" min="0" inputmode="numeric" value="5"><button data-t="kids" data-d="1">+</button></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">2</span> মেনুতে কী কী থাকবে?</h2>
+    <p class="hint">যা যা রান্না হবে সব বেছে নিন</p>
+    <div class="menu" id="menu"></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">3</span> একটু বাড়তি রাখবেন?</h2>
+    <p class="hint">হঠাৎ মেহমান বা বেশি খাওয়ার জন্য</p>
+    <div class="seg" id="extra">
+      <button data-v="0">না</button>
+      <button data-v="10" class="on">১০% বেশি</button>
+      <button data-v="20">২০% বেশি</button>
+    </div>
+  </section>
+
+  <section class="card result" id="result">
+    <div class="code">// your_bazar_list</div>
+    <h2>🛒 বাজারের লিস্ট</h2>
+    <div id="out"></div>
+  </section>
+
+  <details class="card">
+    <summary>✏️ আপনার এলাকার দাম বসান</summary>
+    <p class="hint" style="margin-top:6px">এখানের দাম আনুমানিক। আপনার বাজারের দাম দিলে খরচ ঠিক হবে। ফোনে সেভ থাকবে।</p>
+    <div class="prices" id="prices"></div>
+    <div class="btns"><button class="btn" id="resetPrices" style="background:#eee;color:var(--ink)">আগের দামে ফেরত যান</button></div>
+  </details>
+
+  <footer>
+    বানিয়েছে <a href="https://www.facebook.com/spiceandcode" target="_blank" rel="noopener">Spice &amp; Code</a> 💚
+    <span class="code">a pinch of spice, a little bit of code</span>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- ingredients: name, unit, default price (৳ per unit) ----------
+// unit: kg | l | pcs. Quantities in recipes below are in grams / ml / pieces per ONE adult plate.
+const ING = {
+  polaoRice: { n: 'পোলাওর চাল (চিনিগুঁড়া)', u: 'kg', p: 150 },
+  rice:      { n: 'সাদা চাল (মিনিকেট)',     u: 'kg', p: 80 },
+  beef:      { n: 'গরুর মাংস',               u: 'kg', p: 800 },
+  mutton:    { n: 'খাসির মাংস',              u: 'kg', p: 1200 },
+  chicken:   { n: 'ব্রয়লার মুরগি (১–১.২ কেজি)', u: 'pcs', p: 260 },
+  egg:       { n: 'ডিম',                      u: 'pcs', p: 13 },
+  dal:       { n: 'মসুর ডাল',                u: 'kg', p: 120 },
+  onion:     { n: 'পেঁয়াজ',                  u: 'kg', p: 70 },
+  potato:    { n: 'আলু',                      u: 'kg', p: 30 },
+  gingerGarlic: { n: 'আদা + রসুন',           u: 'kg', p: 250 },
+  oil:       { n: 'সয়াবিন তেল',              u: 'l',  p: 185 },
+  ghee:      { n: 'ঘি',                       u: 'kg', p: 1600 },
+  yogurt:    { n: 'টক দই',                    u: 'kg', p: 200 },
+  milk:      { n: 'দুধ',                      u: 'l',  p: 90 },
+  sugar:     { n: 'চিনি',                     u: 'kg', p: 130 },
+  cucumber:  { n: 'শসা',                      u: 'kg', p: 60 },
+  tomato:    { n: 'টমেটো',                    u: 'kg', p: 80 },
+};
+
+// ---------- dishes: per adult plate (g / ml / pcs) ----------
+const DISHES = [
+  { id: 'polao',   em: '🍚', n: 'পোলাও',         s: 'চিনিগুঁড়া চালের', on: true,
+    r: { polaoRice: 110, ghee: 10, oil: 10, onion: 15 } },
+  { id: 'rice',    em: '🍚', n: 'সাদা ভাত',       s: 'সাথে ডাল ভালো',
+    r: { rice: 150 } },
+  { id: 'kacchi',  em: '🥘', n: 'কাচ্চি বিরিয়ানি', s: 'খাসির মাংসে',
+    r: { polaoRice: 130, mutton: 220, potato: 80, yogurt: 40, ghee: 20, oil: 15, onion: 50, gingerGarlic: 8, milk: 20 } },
+  { id: 'beef',    em: '🍖', n: 'গরুর মাংস ভুনা', s: 'ঝাল ঝাল', on: true,
+    r: { beef: 180, onion: 50, oil: 25, gingerGarlic: 12 } },
+  { id: 'mutton',  em: '🍲', n: 'খাসির রেজালা',   s: 'দই দিয়ে',
+    r: { mutton: 160, onion: 45, oil: 15, ghee: 8, yogurt: 30, gingerGarlic: 10 } },
+  { id: 'roast',   em: '🍗', n: 'মুরগির রোস্ট',   s: 'জনপ্রতি ১ পিস', on: true,
+    r: { chicken: 0.25, onion: 40, yogurt: 25, ghee: 8, oil: 10, sugar: 4, gingerGarlic: 6 } },
+  { id: 'egg',     em: '🥚', n: 'ডিমের কোরমা',    s: 'জনপ্রতি ১টা',
+    r: { egg: 1, onion: 20, oil: 10, yogurt: 10 } },
+  { id: 'dal',     em: '🥣', n: 'ডাল',            s: 'পাতলা ডাল',
+    r: { dal: 30, onion: 10, oil: 5 } },
+  { id: 'salad',   em: '🥗', n: 'সালাদ',          s: 'শসা, টমেটো, পেঁয়াজ', on: true,
+    r: { cucumber: 50, tomato: 30, onion: 15 } },
+  { id: 'borhani', em: '🥛', n: 'বোরহানি',        s: 'জনপ্রতি ১ গ্লাস', on: true,
+    r: { yogurt: 100, sugar: 10 } },
+  { id: 'firni',   em: '🍮', n: 'ফিরনি',          s: 'জনপ্রতি ১ বাটি',
+    r: { milk: 150, polaoRice: 15, sugar: 20 } },
+  { id: 'jorda',   em: '🟡', n: 'জর্দা',           s: 'মিষ্টি পোলাও',
+    r: { polaoRice: 40, sugar: 35, ghee: 8 } },
+];
+const MISC = 0.08; // spices, salt, green chili, gas etc.
+
+// ---------- helpers ----------
+const bn = s => String(s).replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d]);
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+let prices = Object.assign({}, Object.fromEntries(Object.entries(ING).map(([k, v]) => [k, v.p])), store.get('dawat-prices', {}));
+let extra = 10;
+
+function fmtQty(key, amount) {
+  const u = ING[key].u;
+  if (u === 'pcs') return { txt: bn(Math.ceil(amount)) + (key === 'egg' ? 'টা' : 'টা'), buy: Math.ceil(amount) };
+  // amount is in g or ml -> kg / l, rounded up to 0.25 for big, 50 g for small
+  const big = amount / 1000;
+  let buy, txt;
+  if (big >= 1) { buy = Math.ceil(big * 4) / 4; txt = bn(buy) + (u === 'l' ? ' লিটার' : ' কেজি'); }
+  else { const g = Math.max(50, Math.ceil(amount / 50) * 50); buy = g / 1000; txt = bn(g) + (u === 'l' ? ' মিলি' : ' গ্রাম'); }
+  return { txt, buy };
+}
+
+// ---------- build UI ----------
+const menu = $('menu');
+const chosen = new Set(store.get('dawat-menu', DISHES.filter(d => d.on).map(d => d.id)));
+DISHES.forEach(d => {
+  const el = document.createElement('label');
+  el.className = 'dish' + (chosen.has(d.id) ? ' on' : '');
+  el.innerHTML = `<input type="checkbox" ${chosen.has(d.id) ? 'checked' : ''}><span class="em">${d.em}</span><span><b>${d.n}</b><small>${d.s}</small></span>`;
+  el.querySelector('input').addEventListener('change', e => {
+    e.target.checked ? chosen.add(d.id) : chosen.delete(d.id);
+    el.classList.toggle('on', e.target.checked);
+    store.set('dawat-menu', [...chosen]);
+    calc();
+  });
+  menu.appendChild(el);
+});
+
+document.querySelectorAll('.stepper button').forEach(b => b.addEventListener('click', () => {
+  const inp = $(b.dataset.t);
+  inp.value = Math.max(0, (parseInt(inp.value) || 0) + Number(b.dataset.d));
+  calc();
+}));
+['adults', 'kids'].forEach(id => $(id).addEventListener('input', calc));
+
+document.querySelectorAll('#extra button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#extra button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); extra = Number(b.dataset.v); calc();
+}));
+
+function buildPrices() {
+  const box = $('prices'); box.innerHTML = '';
+  for (const [k, v] of Object.entries(ING)) {
+    const unit = v.u === 'pcs' ? 'প্রতিটা' : v.u === 'l' ? 'প্রতি লিটার' : 'প্রতি কেজি';
+    const lab = document.createElement('span'); lab.textContent = `${v.n} (৳ ${unit})`;
+    const inp = document.createElement('input'); inp.type = 'number'; inp.inputMode = 'numeric'; inp.value = prices[k];
+    inp.addEventListener('input', () => { prices[k] = Number(inp.value) || 0; store.set('dawat-prices', prices); calc(); });
+    box.append(lab, inp);
+  }
+}
+$('resetPrices').addEventListener('click', () => {
+  prices = Object.fromEntries(Object.entries(ING).map(([k, v]) => [k, v.p]));
+  store.set('dawat-prices', {}); buildPrices(); calc(); toast('দাম আগের মতো করা হলো');
+});
+
+// ---------- calculate ----------
+let lastList = '';
+function calc() {
+  const adults = Math.max(0, parseInt($('adults').value) || 0);
+  const kids = Math.max(0, parseInt($('kids').value) || 0);
+  const plates = (adults + kids * 0.5) * (1 + extra / 100);
+  const need = {};
+  DISHES.filter(d => chosen.has(d.id)).forEach(d => {
+    for (const [k, q] of Object.entries(d.r)) need[k] = (need[k] || 0) + q * plates;
+  });
+  const out = $('out');
+  if (!plates || !Object.keys(need).length) {
+    out.innerHTML = '<p class="empty">মেহমানের সংখ্যা দিন আর মেনু বাছুন 👆</p>'; lastList = ''; return;
+  }
+  let rows = '', total = 0, lines = [];
+  for (const k of Object.keys(ING)) {
+    if (!need[k]) continue;
+    const { txt, buy } = fmtQty(k, need[k]);
+    const cost = Math.round(buy * prices[k]);
+    total += cost;
+    rows += `<tr><td>${ING[k].n}</td><td class="q">${txt}</td><td class="c">৳${bn(cost.toLocaleString('en-IN'))}</td></tr>`;
+    lines.push(`• ${ING[k].n}: ${txt}`);
+  }
+  const misc = Math.round(total * MISC / 10) * 10;
+  total += misc;
+  const people = adults + kids;
+  const perPlate = people ? Math.round(total / people) : 0;
+  out.innerHTML = `
+    <div class="total">
+      <div><small>মোট আনুমানিক খরচ</small><b>৳${bn(total.toLocaleString('en-IN'))}</b></div>
+      <div><small>জনপ্রতি খরচ</small><b>৳${bn(perPlate.toLocaleString('en-IN'))}</b></div>
+    </div>
+    <table><thead><tr><th>কী লাগবে</th><th>কতটুকু</th><th class="c">খরচ</th></tr></thead><tbody>
+    ${rows}
+    <tr><td>মসলা, লবণ, কাঁচামরিচ, গ্যাস ইত্যাদি</td><td class="q">—</td><td class="c">৳${bn(misc.toLocaleString('en-IN'))}</td></tr>
+    </tbody></table>
+    <p class="note">* হিসাব আনুমানিক, বাড়ির রান্নার গড় ধরে। দাম নিজের বাজারের মতো বদলাতে নিচে যান।</p>
+    <div class="btns">
+      <button class="btn y" id="copy">📋 লিস্ট কপি করুন</button>
+      <button class="btn o" id="share">📤 শেয়ার করুন</button>
+    </div>`;
+  const dishes = DISHES.filter(d => chosen.has(d.id)).map(d => d.n).join(', ');
+  lastList = `🛒 দাওয়াতের বাজার (${bn(adults)} জন বড়, ${bn(kids)} জন বাচ্চা)\nমেনু: ${dishes}\n\n${lines.join('\n')}\n\nআনুমানিক খরচ: ৳${bn(total.toLocaleString('en-IN'))}\n\n— Spice & Code দাওয়াত ক্যালকুলেটর\n${location.href.split('#')[0]}`;
+  $('copy').onclick = copyList;
+  $('share').onclick = shareList;
+}
+
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000); }
+async function copyList() {
+  try { await navigator.clipboard.writeText(lastList); toast('কপি হয়েছে! WhatsApp-এ পেস্ট করুন'); }
+  catch { const ta = document.createElement('textarea'); ta.value = lastList; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('কপি হয়েছে!'); }
+}
+async function shareList() {
+  if (navigator.share) { try { await navigator.share({ text: lastList }); } catch {} }
+  else copyList();
+}
+
+buildPrices();
+calc();
+</script>
+</body>
+</html>
